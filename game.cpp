@@ -10,17 +10,21 @@ using std::swap;
 using std::pair;
 using std::make_pair;
 static int n, m;
+static int tot_mine, last_mine;
 static vector< vector< int > > f, t;
 static int p[9] = {0, 1, 0, -1, 0, 1, 1, -1, -1};
 static int q[9] = {0, 0, 1, 0, -1, 1, -1, 1, -1};
 //n lines, m cals
+//tot_mine mines, last_mine untagged mines
 //f means the "map", tag means the state of a box(being showed, being tagged, etc.)
 //p, q means the 8 nearest box's relative position
 //f: -1 if mine, 0 if blank
 //t: 0 if unrevealed, 1 if tagged, -1 if revealed
 /*
-pivvi returns: the operation is available or not(.first neq 0 or not), after
-the operation, whether the game is lose or win or continue(.first = -1 or 2 or 1), */
+pivvi returns: the operation is available or not(.first neq 0 or not), after the 
+operation, whether the game is lose or win or continue(.first = -1 or -2 or lastmine),
+and return two-dimensional array f if the order is init, t otherwise.
+*/
 void init(int _n, int _m)
 {
     n = _n, m = _m;
@@ -59,6 +63,7 @@ int near_tag(int x, int y)
 }
 pivvi init_map(int x, int y, int num)
 {
+    tot_mine = last_mine = num;
     int i, j, u, v;
     std::mt19937 ran(time(0));
     static int *a;
@@ -90,7 +95,7 @@ pivvi init_map(int x, int y, int num)
         for (j = 0; j < m; j++)
             f[i][j] = (!f[i][j]) ? near_mine(i, j) : f[i][j];
     }
-    return mkp(1, f);
+    return mkp(last_mine, f);
 }
 void ext(int x, int y)
 {
@@ -108,8 +113,10 @@ pivvi tag(int x, int y)
 {
     if (t[x][y] < 0)
         return mkp(0, t);
+    last_mine += t[x][y];
     t[x][y] ^= 1;
-    return mkp(1, t);
+    last_mine -= t[x][y];
+    return mkp(last_mine, t);
 }
 pivvi click(int x, int y)
 {
@@ -120,8 +127,8 @@ pivvi click(int x, int y)
         return mkp(-1, t);
     ext(x, y);
     if (check().first == 1)
-        return mkp(2, t);
-    return mkp(1, t);
+        return mkp(-2, t);
+    return mkp(last_mine, t);
 }
 pivvi double_click(int x, int y)
 {
@@ -139,7 +146,7 @@ pivvi double_click(int x, int y)
     if (j == -1)
         return mkp(-1, t);
     if (!j)
-        return mkp(1, t);
+        return mkp(last_mine, t);
     if (j == 1)
-        return mkp(2, t);
+        return mkp(-2, t);
 }

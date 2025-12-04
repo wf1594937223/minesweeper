@@ -3,7 +3,7 @@
 */
 
 
-#include "cgt/cgt.h"
+#include "cgt.h"
 
 
 /**
