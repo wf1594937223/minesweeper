@@ -1,9 +1,10 @@
 # include <stdio.h>
 # include <random>
 # include <ctime>
-# include <game.h>
+# include "game.h"
 # include <vector>
 # include <algorithm>
+# include <iostream>
 # define mkp make_pair
 using std::vector;
 using std::swap;
@@ -51,14 +52,22 @@ int near_mine(int x, int y)
 {
     int i, j = 0;
     for (i = 1; i <= 8; i++)
+    {
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
+            continue;
         j += (f[x + p[i]][y + q[i]] == -1);
+    }
     return j;
 }
 int near_tag(int x, int y)
 {
     int i, j = 0;
     for (i = 1; i <= 8; i++)
+    {
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
+            continue;
         j += (t[x + p[i]][y + q[i]] == 1);
+    }
     return j;
 }
 pivvi init_map(int x, int y, int num)
@@ -66,79 +75,99 @@ pivvi init_map(int x, int y, int num)
     tot_mine = last_mine = num;
     int i, j, u, v;
     std::mt19937 ran(time(0));
-    static int *a;
+    int *a;
     a = new int[n * m];
     //psu random_shuffle begin
     for (i = 0; i < 9; i++)
-        f[x + p[i]][y + q[i]] = 1;
-    for (i = 0; i < n * m; i++)
     {
-        if (f[a[i] / m + 1][a[i] % m + 1])
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
             continue;
-        a[++j] = i;
+        f[x + p[i]][y + q[i]] = 1;
+    }
+    for (i = 0, j = 0; i < n * m; i++)
+    {
+        if (f[i / m + 1][i % m + 1])
+            continue;
+        a[j++] = i;
     }
     for (i = 0; i < 9; i++)
-        f[x + p[i]][y + q[i]] = 0;
-    for (i = 0; i < n * m - 9; i++)
     {
-        a[i] = i;
-        swap(a[i], a[ran() % i]);
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
+            continue;
+        f[x + p[i]][y + q[i]] = 0;
     }
+    // std::cout << "checkpoint4" << std::endl;
+    for (i = 1; i < j; i++)
+        swap(a[i], a[ran() % i]);
     for (i = 0; i < num; i++)
     {
         u = a[i] / m + 1;
         v = a[i] % m + 1;
         f[u][v] = -1;
     }
-    for (i = 0; i < n; i++)
+    for (i = 1; i <= n; i++)
     {
-        for (j = 0; j < m; j++)
+        for (j = 1; j <= m; j++)
             f[i][j] = (!f[i][j]) ? near_mine(i, j) : f[i][j];
     }
-    return mkp(last_mine, f);
+    // std::cout << "checkpoint7" << std::endl;
+    return mkp(last_mine + 1, f);
 }
 void ext(int x, int y)
 {
     int i, j;
     if (t[x][y] < 0)
         return;
+    t[x][y] = -1;
+    //std :: cerr << "exting" << x << ' ' << y << f[x][y] << std :: endl;
     if (f[x][y])
         return;
-    t[x][y] = -1;
     for (i = 1; i <= 8; i++)
-        ext(x + p[i], x + q[i]);
+    {
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
+            continue;
+        ext(x + p[i], y + q[i]);
+    }
     return;
 }
 pivvi tag(int x, int y)
 {
     if (t[x][y] < 0)
         return mkp(0, t);
+    if (!last_mine && !t[x][y])
+        return mkp(0, t);
     last_mine += t[x][y];
     t[x][y] ^= 1;
     last_mine -= t[x][y];
-    return mkp(last_mine, t);
+    return mkp(last_mine + 1, t);
 }
 pivvi click(int x, int y)
 {
     if (t[x][y])
         return mkp(0, t);
-    t[x][y] = -1;
     if (f[x][y] < 0)
         return mkp(-1, t);
+    // std::cout << "checkpoint1" << std::endl;
     ext(x, y);
+    // std::cout << "checkpoint1" << std::endl;
     if (check().first == 1)
         return mkp(-2, t);
-    return mkp(last_mine, t);
+    // std::cout << "checkpoint1" << std::endl;
+    return mkp(last_mine + 1, t);
 }
 pivvi double_click(int x, int y)
 {
+    // std::cerr << "d_c tag" << std::endl;
+    // upside ok
     int i, j;
-    if (t[x][y] != -1 || f[x][y])
+    if (t[x][y] != -1 || !f[x][y])
         return mkp(0, t);
     if (near_mine(x, y) != near_tag(x, y))
         return mkp(0, t);
     for (i = 1; i <= 8; i++)
     {
+        if (x + p[i] < 1 || y + q[i] < 1 || x + p[i] > n || y + q[i] > m)
+            continue;
         if (f[x + p[i]][y + q[i]] != -1)
             click(x + p[i], y + q[i]);
     }
@@ -146,7 +175,7 @@ pivvi double_click(int x, int y)
     if (j == -1)
         return mkp(-1, t);
     if (!j)
-        return mkp(last_mine, t);
+        return mkp(last_mine + 1, t);
     if (j == 1)
         return mkp(-2, t);
 }

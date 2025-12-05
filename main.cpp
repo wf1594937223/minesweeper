@@ -64,7 +64,8 @@ int main()
             cout << "欢迎下次再来！" << endl;
             break;
         }
-        cout << "请按任意键开始游戏！";
+        cout << "请按回车键后移动鼠标开始游戏！";
+        getchar();
         getchar();
         init_gra(n, m, mine);
         while(1)

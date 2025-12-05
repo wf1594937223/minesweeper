@@ -3,7 +3,6 @@
 # include <stdio.h>
 # include <random>
 # include <ctime>
-# include <game.h>
 # include <vector>
 # include <algorithm>
 using pivvi = std::pair< int, std::vector< std::vector< int > > >;

@@ -2,6 +2,8 @@
 # include "cgt.h"
 # include "game.h"
 # include <sstream>
+# include <iostream>
+# include <string.h>
 # define mkp make_pair
 using std::vector;
 using std::swap;
@@ -46,6 +48,7 @@ int prt_mode(pii tmp, int mode)
     1-: tagged boxes
     */
     int x = tmp.first, y = tmp.second;
+    std::swap(x, y); //I think x, y inversed when I coded
     if (mode == -1)
     {
         cgt_print_str(" ", x, y, COLOR_WHITE, COLOR_WHITE);
@@ -196,15 +199,27 @@ void init_gra(int _n, int _m, int _mine)
     mp.assign(mpn + 1, vector<int>(mpm + 1, 0));
     return;
 }
+void prt_first_line()
+{
+     int i, j;
+    //cgt_clear_screen();
+    std::stringstream ss;
+    char tmps[110] = {0};
+    memset(tmps, ' ', sizeof(tmps) - 1);
+    cgt_print_str(tmps, 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
+    return;
+}
 void prt_screen()
 {
     int i, j;
-    cgt_clear_screen();
+    //cgt_clear_screen();
     std::stringstream ss;
     char tmps[110] = {0};
+    //memset(tmps, ' ', sizeof(tmps) - 1);
+    //cgt_print_str(tmps, 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     ss << "扫雷 : " << n << "×" << m << " , " << "雷数 : " << tot_mine << " , "
         << "剩余 : " << last_mine;
-    ss >> tmps;
+    ss.getline(tmps, 110);
     cgt_print_str(tmps, 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     for (i = 3; i <= mpn; i++)
     {
@@ -220,7 +235,7 @@ void game_lose()
     std::stringstream ss;
     char tmps[110] = {0};
     ss << "很遗憾，你Cia到了llo～(∠・ω< )⌒☆";
-    ss >> tmps;
+    ss.getline(tmps, 110);
     cgt_print_str(tmps, 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     for (i = 1; i <= n; i++)
     {
@@ -237,7 +252,8 @@ void game_lose()
         for (j = 3; j <= mpm; j++)
             prt_single(mkp(i, j));
     }
-    cgt_print_str("请按任意键继续", mpn + 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
+    //I think x, y inversed when I coded
+    cgt_print_str("请按回车键继续", 1, mpn + 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     while (true)
     {
         if (cgt_has_key())
@@ -258,7 +274,7 @@ void game_win()
     std::stringstream ss;
     char tmps[110] = {0};
     ss << "恭喜你，你成功通关了Ciallo～(∠・ω< )⌒☆";
-    ss >> tmps;
+    ss.getline(tmps, 110);
     cgt_print_str(tmps, 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     for (i = 1; i <= n; i++)
     {
@@ -275,7 +291,8 @@ void game_win()
         for (j = 3; j <= mpm; j++)
             prt_single(mkp(i, j));
     }
-    cgt_print_str("请按任意键继续", mpn + 1, 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
+    //I think x, y inversed when I coded
+    cgt_print_str("请按回车键继续", 1, mpn + 1, COLOR_LIGHT_WHITE, COLOR_BLACK);
     while (true)
     {
         if (cgt_has_key())
@@ -302,6 +319,7 @@ int one_event()
         cgt_msleep(20);
     int x, y, button, event, fl = 0;
     cgt_get_mouse(x, y, button, event);
+    std::swap(x, y); //I think x, y inversed when I coded
     pii now = mkp(x, y);
     pivvi tmp;
     int cli = (button == MOUSE_BUTTON_LEFT && event == MOUSE_CLICK),
@@ -310,15 +328,21 @@ int one_event()
         ta = (button == MOUSE_BUTTON_RIGHT && event == MOUSE_CLICK);
     if (cli)
     {
+        if (invtrans(mkp(x, y)) == mkp(-1, -1))
+            return 0;
+        pii transxy = invtrans(mkp(x, y));
+        x = transxy.first;
+        y = transxy.second;
+        //std::cout << "checkpoint0" << x << " " << y << std::endl;
         if (!flag)
         {
-            if (invtrans(mkp(x, y)) == mkp(-1, -1))
-                return 0;
             flag = 1;
-            int tx = invtrans(mkp(x, y)).first, ty = invtrans(mkp(x, y)).second;
-            init_map(tx, ty, tot_mine);
+            //std::cout << tx << " " << ty << std::endl;
+            //test upside right
+            f = init_map(x, y, tot_mine).second;
         }
         tmp = click(x, y);
+        //std::cout << "checkpoint2" << std::endl;
         if (!tmp.first)
             return 0;
         if (tmp.first == -1)
@@ -332,11 +356,16 @@ int one_event()
             return -2;
         }
         fl = 1;
-        last_mine = tmp.first;
+        last_mine = tmp.first - 1;
         t = tmp.second;
     }
     if (dou_cli)
     {
+        if (invtrans(mkp(x, y)) == mkp(-1, -1))
+            return 0;
+        pii transxy = invtrans(mkp(x, y));
+        x = transxy.first;
+        y = transxy.second;
         if (!flag)
             return 0;
         tmp = double_click(x, y);
@@ -353,12 +382,18 @@ int one_event()
             return -2;
         }
         fl = 1;
-        last_mine = tmp.first;
+        last_mine = tmp.first - 1;
         t = tmp.second;
     }
     if (ta)
     {
+        if (invtrans(mkp(x, y)) == mkp(-1, -1))
+            return 0;
+        pii transxy = invtrans(mkp(x, y));
+        x = transxy.first;
+        y = transxy.second;
         tmp = tag(x, y);
+        prt_first_line();
         if (!tmp.first)
             return 0;
         if (tmp.first == -1)
@@ -372,7 +407,7 @@ int one_event()
             return -2;
         }
         fl = 1;
-        last_mine = tmp.first;
+        last_mine = tmp.first - 1;
         t = tmp.second;
     }
     if (mv)
